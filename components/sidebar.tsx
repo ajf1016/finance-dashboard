@@ -17,7 +17,7 @@ export default function Sidebar() {
     return (
         <aside className="w-56 h-screen border-r border-gray-800 bg-black">
             <div className="flex h-full flex-col">
-                <nav className="flex-1 space-y-2 px-4 py-6">
+                <nav className="flex-1 space-y-2 px-6 pt-10">
                     {navLinks.map((link) => (
                         <button
                             style={{ borderRadius: "0.3rem" }}
