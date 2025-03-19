@@ -15,7 +15,7 @@ export default function Sidebar() {
     const [tab, setTab] = useState("PHA");
 
     return (
-        <aside className="w-56 bg-[#1B1A1A] min-h-screen flex flex-col">
+        <aside className="hidden lg:flex w-56 bg-[#1B1A1A] min-h-screen flex flex-col">
             <div className="flex h-full flex-col">
                 <nav className="flex-1 space-y-2 px-6 pt-10">
                     {navLinks.map((link) => (
