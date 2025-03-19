@@ -10,7 +10,7 @@ import PerformanceMetrics from "@/components/performance-metrics";
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<"performance" | "portfolio">(
-        "performance"
+        "portfolio"
     );
 
     return (

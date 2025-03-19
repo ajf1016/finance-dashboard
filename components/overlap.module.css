@@ -1,0 +1,39 @@
+.container {
+    background-color: #1b1a1a;
+    color: white;
+    padding: 24px;
+    border-radius: 1rem;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.sankeyWrapper {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    min-height: 500px;
+    padding-left: 175px; /* Reserve space for left labels */
+}
+
+.sankeySVG {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+@media (max-width: 1024px) {
+    .container {
+        padding: 16px;
+    }
+
+    .sankeyWrapper {
+        padding-left: 160px; /* Slightly reduce padding on smaller screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .sankeyWrapper {
+        min-height: 400px;
+        padding-left: 140px; /* Further reduce padding on mobile */
+    }
+}
