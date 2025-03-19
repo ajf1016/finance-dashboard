@@ -1,138 +1,395 @@
-"use client"
+import React, { useEffect, useRef, useState } from "react";
+import * as d3 from "d3";
+import { sankey, sankeyLinkHorizontal, SankeyGraph } from "d3-sankey";
+import { Info } from "lucide-react";
+import Image from "next/image";
 
-import { useEffect, useRef } from "react"
-import { Info } from "lucide-react"
-import { usePortfolioStore } from "@/lib/store"
+type Node = {
+    name: string;
+    x?: number;
+    y?: number;
+};
 
-export default function OverlapAnalysis() {
-  const { funds, stocks, connections, selectedFund, highlightedStocks, setSelectedFund } = usePortfolioStore()
+type Link = {
+    source: number;
+    target: number;
+    value: number;
+};
 
-  const svgRef = useRef<SVGSVGElement>(null)
+const data: SankeyGraph<Node, Link> = {
+    nodes: [
+        { name: "Nippon Large Cap Fund - Direct Plan" },
+        { name: "Axis Bluechip Fund" },
+        { name: "Motilal Large Cap Fund - Direct Plan" },
+        { name: "HDFC Large Cap Fund" },
+        { name: "ICICI Prudential Midcap Fund" },
+        { name: "HDFC LTD." },
+        { name: "RIL" },
+        { name: "INFY" },
+        { name: "TCS" },
+        { name: "HDFCBANK" },
+        { name: "BHARTIARTL" },
+    ],
+    links: [
+        { source: 0, target: 5, value: 4 },
+        { source: 0, target: 6, value: 5 },
+        { source: 0, target: 7, value: 1 },
+        { source: 0, target: 8, value: 2 },
+        { source: 0, target: 9, value: 1 },
+        { source: 0, target: 10, value: 5 },
+        { source: 2, target: 5, value: 5 },
+        { source: 2, target: 6, value: 3 },
+        { source: 2, target: 7, value: 4 },
+        { source: 2, target: 8, value: 4 },
+        { source: 2, target: 9, value: 1 },
+        { source: 2, target: 10, value: 2 },
+        { source: 1, target: 5, value: 2 },
+        { source: 1, target: 6, value: 2 },
+        { source: 1, target: 7, value: 4 },
+        { source: 1, target: 8, value: 3 },
+        { source: 1, target: 9, value: 4 },
+        { source: 1, target: 10, value: 2 },
+        { source: 3, target: 5, value: 2 },
+        { source: 3, target: 6, value: 1 },
+        { source: 3, target: 7, value: 5 },
+        { source: 3, target: 8, value: 5 },
+        { source: 3, target: 9, value: 3 },
+        { source: 3, target: 10, value: 3 },
+        { source: 4, target: 5, value: 5 },
+        { source: 4, target: 6, value: 5 },
+        { source: 4, target: 7, value: 2 },
+        { source: 4, target: 8, value: 4 },
+        { source: 4, target: 9, value: 6 },
+        { source: 4, target: 10, value: 4 },
+    ],
+};
 
-  // Check if a stock is highlighted
-  const isStockHighlighted = (stockId: string) => {
-    return highlightedStocks.includes(stockId)
-  }
+const OverlapAnalysis: React.FC = () => {
+    const ref = useRef<SVGSVGElement | null>(null);
+    const [nodePositions, setNodePositions] = useState<Node[]>([]);
 
-  // Draw the Sankey diagram
-  useEffect(() => {
-    if (!svgRef.current) return
+    useEffect(() => {
+        if (!ref.current) return;
+        const width = 1000;
+        const height = 650;
 
-    const svg = svgRef.current
-    const svgWidth = svg.clientWidth || 1000
-    const svgHeight = svg.clientHeight || 400
+        const svg = d3
+            .select(ref.current)
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .style("font", "14px sans-serif");
 
-    // Clear existing paths
-    const existingPaths = svg.querySelectorAll("path")
-    existingPaths.forEach((path) => path.remove())
+        const sankeyGenerator = sankey<Node, Link>()
+            .nodeWidth(20)
+            .nodePadding(30)
+            .extent([
+                [100, 80],
+                [width, height - 80],
+            ]);
 
-    // Calculate positions
-    const leftMargin = 200
-    const rightMargin = 150
-    const topMargin = 80
-    const bottomMargin = 80
+        const { nodes, links } = sankeyGenerator({
+            nodes: data.nodes.map((d) => Object.assign({}, d)),
+            links: data.links.map((d) => Object.assign({}, d)),
+        });
 
-    const fundSpacing = (svgHeight - topMargin - bottomMargin) / (funds.length - 1)
-    const stockSpacing = (svgHeight - topMargin - bottomMargin) / (stocks.length - 1)
+        setNodePositions(
+            nodes.map((d) => ({
+                ...d,
+                x: d.x0 ?? 0,
+                y: (d.y0 ?? 0) + ((d.y1 ?? 0) - (d.y0 ?? 0)) / 2,
+            }))
+        );
 
-    // Draw connections
-    connections.forEach((conn) => {
-      // Find the fund and stock positions
-      const fundIndex = funds.findIndex((f) => f.id === conn.fund)
-      const stockIndex = stocks.findIndex((s) => s.id === conn.stock)
+        svg.selectAll(".link")
+            .data(links)
+            .join("path")
+            .attr("fill", "none")
+            .attr("position", "relative")
+            .attr("stroke-opacity", 0.6)
+            .attr("d", sankeyLinkHorizontal())
+            .attr("stroke", "#2f3031")
+            .attr("stroke-width", (d) => Math.max(1, d.width || 1));
 
-      if (fundIndex === -1 || stockIndex === -1) return
+        svg.selectAll(".node")
+            .data(nodes)
+            .join("rect")
+            .attr("x", (d) => (d.x0 ? d.x0 + 2 : 0))
+            .attr("y", (d) => d.y0 ?? 0)
 
-      // Calculate positions
-      const fundY = topMargin + fundIndex * fundSpacing
-      const stockY = topMargin + stockIndex * stockSpacing
+            .attr("height", (d) => (d.y1 ?? 0) - (d.y0 ?? 0))
+            // .attr("width", sankeyGenerator.nodeWidth() + 40)
+            .attr("width", 15)
+            .attr("fill", (d, i) => d3.schemeCategory10[i % 10])
+            .attr("stroke", "black")
+            .attr("rx", 3)
+            .attr("ry", 3);
+    }, []);
 
-      // Determine if this connection should be highlighted
-      const isHighlighted = selectedFund === conn.fund || selectedFund === null
-
-      // Create path
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path")
-
-      // Set path attributes
-      path.setAttribute(
-        "d",
-        `M ${leftMargin} ${fundY} C ${leftMargin + 200} ${fundY}, ${svgWidth - rightMargin - 200} ${stockY}, ${svgWidth - rightMargin} ${stockY}`,
-      )
-      path.setAttribute("fill", "none")
-      path.setAttribute("stroke", isHighlighted ? funds[fundIndex].color : "#333")
-      path.setAttribute("stroke-width", isHighlighted ? conn.weight.toString() : "1")
-      path.setAttribute("stroke-opacity", isHighlighted ? "0.7" : "0.3")
-
-      // Add path to SVG
-      svg.appendChild(path)
-    })
-  }, [funds, stocks, connections, selectedFund, highlightedStocks])
-
-  return (
-    <div className="mt-10">
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-semibold text-blue-500">Overlap Analysis</h2>
-        <Info className="w-4 h-4 ml-2 text-gray-400" />
-      </div>
-
-      <div className="mb-4">
-        <p className="text-gray-300">Comparing : Motilal Large Cap Fund and Nippon Large Cap Fund</p>
-        <ul className="mt-2 space-y-1">
-          <li className="flex items-center">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-            <span>X Stocks Overlap across these funds.</span>
-          </li>
-          <li className="flex items-center">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-            <span>Y% Average Overlap in holdings.</span>
-          </li>
-        </ul>
-      </div>
-
-      <div className="relative h-[400px] mt-8 bg-gray-900 bg-opacity-30 rounded-lg p-4">
-        <div className="absolute left-0 top-0 bottom-0 w-[200px] flex flex-col justify-around py-8">
-          {funds.map((fund) => (
-            <div
-              key={fund.id}
-              className={`
-                p-3 rounded-md cursor-pointer transition-all
-                ${selectedFund === fund.id ? "border-l-4" : "border-l-2"}
-              `}
-              style={{
-                borderLeftColor: fund.color,
-                backgroundColor: selectedFund === fund.id ? fund.backgroundColor : "transparent",
-              }}
-              onClick={() => setSelectedFund(fund.id)}
-            >
-              <div className="text-sm font-medium">{fund.name}</div>
+    return (
+        <div
+            className="bg-[#1B1A1A] text-white p-6"
+            style={{ borderRadius: "1rem" }}
+        >
+            <div className="flex items-center mb-4">
+                <h2 className="text-xl font-medium">Overlap Analysis</h2>
+                <Image
+                    src="/assets/icons/warning.svg"
+                    alt="Logo"
+                    width={20}
+                    height={20}
+                    className="h-3 w-3 ml-2"
+                />
             </div>
-          ))}
-        </div>
 
-        <div className="absolute right-0 top-0 bottom-0 w-[150px] flex flex-col justify-around py-8">
-          {stocks.map((stock) => (
-            <div
-              key={stock.id}
-              className={`
-                p-2 rounded-md transition-all
-                ${isStockHighlighted(stock.id) ? "bg-gray-800" : "bg-transparent"}
-                ${isStockHighlighted(stock.id) ? "border-r-4" : "border-r-2"}
-              `}
-              style={{ borderRightColor: stock.color }}
-            >
-              <div className="text-sm font-medium text-right">{stock.name}</div>
+            <div>
+                <p className="text-gray-300">
+                    Comparing : Motilal Large Cap Fund and Nippon Large Cap Fund
+                </p>
+                <ul className="mt-2 space-y-1">
+                    <li className="flex items-center">
+                        <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                        <span>X Stocks Overlap across these funds.</span>
+                    </li>
+                    <li className="flex items-center">
+                        <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                        <span>Y% Average Overlap in holdings.</span>
+                    </li>
+                </ul>
             </div>
-          ))}
+
+            <div style={{ position: "relative" }}>
+                <svg ref={ref} width={1200} height={650}></svg>
+
+                {/* Left-Side Fund Labels */}
+                {nodePositions.slice(0, 5).map((node, index) => {
+                    return (
+                        // Add return statement
+                        <div
+                            key={index}
+                            style={{
+                                position: "absolute",
+                                top: node.y ? node.y - 30 : 0,
+                                left: node.x ? node.x - 60 : 0,
+                                width: "150px",
+                                // height: (node.y1 ?? 0) - (node.y0 ?? 0),
+                                height: 55,
+                                backgroundColor:
+                                    d3.schemeCategory10[index % 10],
+                                color: "white",
+                                padding: "6px",
+                                borderRadius: "8px",
+                                textAlign: "center",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                alignContent: "center",
+                            }}
+                        >
+                            {node.name}
+                        </div>
+                    );
+                })}
+
+                {/* Right-Side Stock Labels */}
+                {nodePositions.slice(5).map((node, index) => (
+                    <div
+                        key={index}
+                        style={{
+                            position: "absolute",
+                            top: node.y ? node.y - 10 : 0,
+                            left: node.x ? node.x + 130 : 0,
+                            width: "100px",
+                            backgroundColor: "transparent",
+                            color: "white",
+                            textAlign: "left",
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                        }}
+                    >
+                        {node.name}
+                    </div>
+                ))}
+            </div>
         </div>
+    );
+};
 
-        <svg
-          ref={svgRef}
-          className="absolute inset-0 w-full h-full"
-          viewBox="0 0 1000 400"
-          preserveAspectRatio="none"
-        />
-      </div>
-    </div>
-  )
-}
+export default OverlapAnalysis;
 
+// import React, { useEffect, useRef, useState } from "react";
+// import * as d3 from "d3";
+// import { sankey, sankeyLinkHorizontal, SankeyGraph } from "d3-sankey";
+// import { Info } from "lucide-react";
+
+// type Node = {
+//     name: string;
+//     x?: number;
+//     y?: number;
+// };
+
+// type Link = {
+//     source: number;
+//     target: number;
+//     value: number;
+// };
+
+// const data: SankeyGraph<Node, Link> = {
+//     nodes: [
+//         { name: "Nippon Large Cap Fund - Direct Plan" },
+//         { name: "Motilal Large Cap Fund - Direct Plan" },
+//         { name: "Axis Bluechip Fund" },
+//         { name: "HDFC Large Cap Fund" },
+//         { name: "ICICI Prudential Midcap Fund" },
+//         { name: "HDFC LTD." },
+//         { name: "RIL" },
+//         { name: "INFY" },
+//         { name: "TCS" },
+//         { name: "HDFCBANK" },
+//         { name: "BHARTIARTL" },
+//     ],
+//     links: [
+//         { source: 0, target: 5, value: 4 },
+//         { source: 0, target: 6, value: 5 },
+//         { source: 1, target: 5, value: 5 },
+//         { source: 1, target: 6, value: 3 },
+//         { source: 2, target: 5, value: 2 },
+//         { source: 2, target: 7, value: 4 },
+//         { source: 3, target: 5, value: 2 },
+//         { source: 3, target: 6, value: 1 },
+//         { source: 3, target: 7, value: 5 },
+//         { source: 4, target: 5, value: 5 },
+//         { source: 4, target: 7, value: 2 },
+//         { source: 4, target: 8, value: 4 },
+//     ],
+// };
+
+// const OverlapAnalysis: React.FC = () => {
+//     const ref = useRef<SVGSVGElement | null>(null);
+//     const [nodePositions, setNodePositions] = useState<Node[]>([]);
+
+//     useEffect(() => {
+//         if (!ref.current) return;
+//         const width = 1000;
+//         const height = 650;
+
+//         const svg = d3
+//             .select(ref.current)
+//             .attr("viewBox", `0 0 ${width} ${height}`)
+//             .style("font", "14px sans-serif");
+
+//         const sankeyGenerator = sankey<Node, Link>()
+//             .nodeWidth(20)
+//             .nodePadding(40) // Increase padding for better spacing
+//             .extent([
+//                 [180, 100], // Adjusted to better align with Figma layout
+//                 [width - 100, height - 100],
+//             ]);
+
+//         const { nodes, links } = sankeyGenerator({
+//             nodes: data.nodes.map((d) => Object.assign({}, d)),
+//             links: data.links.map((d) => Object.assign({}, d)),
+//         });
+
+//         setNodePositions(
+//             nodes.map((d) => ({
+//                 ...d,
+//                 x: d.x0 ?? 0,
+//                 y: (d.y0 ?? 0) + ((d.y1 ?? 0) - (d.y0 ?? 0)) / 2,
+//             }))
+//         );
+
+//         svg.selectAll(".link")
+//             .data(links)
+//             .join("path")
+//             .attr("fill", "none")
+//             .attr("stroke-opacity", 0.6)
+//             .attr("d", sankeyLinkHorizontal())
+//             .attr("stroke", "#888")
+//             .attr("stroke-width", (d) => Math.max(2, d.width || 1));
+
+//         svg.selectAll(".node")
+//             .data(nodes)
+//             .join("rect")
+//             .attr("x", (d) => (d.x0 ? d.x0 + 5 : 0)) // Shift slightly for better alignment
+//             .attr("y", (d) => d.y0 ?? 0)
+//             .attr("height", (d) => (d.y1 ?? 0) - (d.y0 ?? 0))
+//             .attr("width", 15)
+//             .attr("fill", (d, i) => d3.schemeCategory10[i % 10])
+//             .attr("stroke", "black")
+//             .attr("rx", 3)
+//             .attr("ry", 3);
+//     }, []);
+
+//     return (
+//         <div className="bg-[#1B1A1A] text-white p-6 rounded-xl">
+//             <div className="flex items-center mb-4">
+//                 <h2 className="text-xl font-semibold text-blue-500">
+//                     Overlap Analysis
+//                 </h2>
+//                 <Info className="w-4 h-4 ml-2 text-gray-400" />
+//             </div>
+
+//             <div className="mb-4">
+//                 <p className="text-gray-300">
+//                     Comparing : Motilal Large Cap Fund and Nippon Large Cap Fund
+//                 </p>
+//                 <ul className="mt-2 space-y-1">
+//                     <li className="flex items-center">
+//                         <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+//                         <span>X Stocks Overlap across these funds.</span>
+//                     </li>
+//                     <li className="flex items-center">
+//                         <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+//                         <span>Y% Average Overlap in holdings.</span>
+//                     </li>
+//                 </ul>
+//             </div>
+
+//             <div style={{ position: "relative" }}>
+//                 <svg ref={ref} width={1000} height={650}></svg>
+
+//                 {/* Left-Side Fund Labels */}
+//                 {nodePositions.slice(0, 5).map((node, index) => (
+//                     <div
+//                         key={index}
+//                         style={{
+//                             position: "absolute",
+//                             top: node.y - 10,
+//                             left: node.x - 160, // Shifted left for correct positioning
+//                             width: "150px",
+//                             backgroundColor: d3.schemeCategory10[index % 10],
+//                             color: "white",
+//                             padding: "6px",
+//                             borderRadius: "8px",
+//                             textAlign: "center",
+//                             fontSize: "12px",
+//                             fontWeight: "bold",
+//                         }}
+//                     >
+//                         {node.name}
+//                     </div>
+//                 ))}
+
+//                 {/* Right-Side Stock Labels */}
+//                 {nodePositions.slice(5).map((node, index) => (
+//                     <div
+//                         key={index}
+//                         style={{
+//                             position: "absolute",
+//                             top: node.y - 10,
+//                             left: node.x + 30, // Shifted right for better placement
+//                             width: "100px",
+//                             backgroundColor: "transparent",
+//                             color: "white",
+//                             textAlign: "left",
+//                             fontSize: "12px",
+//                             fontWeight: "bold",
+//                         }}
+//                     >
+//                         {node.name}
+//                     </div>
+//                 ))}
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default OverlapAnalysis;
