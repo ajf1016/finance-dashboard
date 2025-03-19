@@ -95,7 +95,7 @@ export default function Navbar() {
                         className="text-gray-100 hover:text-white"
                     >
                         <Image
-                            src="/assets/icons/logout.svg"
+                            src="/assets/icons/Logout.svg"
                             alt="Logo"
                             width={20}
                             height={20}
