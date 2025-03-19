@@ -10,7 +10,7 @@ import PerformanceMetrics from "@/components/performance-metrics";
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<"performance" | "portfolio">(
-        "portfolio"
+        "performance"
     );
 
     return (
@@ -18,8 +18,8 @@ export default function Dashboard() {
             <Navbar />
             <div className="flex flex-1 min-h-screen">
                 <Sidebar />
-                <main className="flex-1 px-6 py-10 sm:px-2 sm:py-4">
-                    <div className="mb-8">
+                <main className="flex-1">
+                    <div className="mb-2 px-6 pt-10">
                         <h1 className="text-2xl font-medium">
                             Good morning, Yashna!
                         </h1>
@@ -30,7 +30,7 @@ export default function Dashboard() {
 
                     <InvestmentSummary />
 
-                    <div className="mt-10">
+                    <div className="px-6 pt-10">
                         <TabNavigation
                             activeTab={activeTab}
                             onTabChange={(tab) =>
@@ -38,11 +38,11 @@ export default function Dashboard() {
                             }
                         />
 
-                        {/* {activeTab === "performance" ? (
+                        {activeTab === "performance" ? (
                             <PerformanceMetrics />
                         ) : (
                             <PortfolioComposition />
-                        )} */}
+                        )}
                     </div>
                 </main>
             </div>

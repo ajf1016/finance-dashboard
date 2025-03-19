@@ -38,11 +38,11 @@ const investmentData = [
 
 export default function InvestmentSummary() {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
             {investmentData.map((item, index) => (
                 <div
                     key={index}
-                    className="bg-[#11283E] rounded-xl p-5 flex flex-col h-auto sm:h-[120px] justify-between transition-all sm:p-2"
+                    className="bg-[#11283E] rounded-xl p-5 flex flex-col w-full h-auto sm:h-[120px] justify-between transition-all"
                 >
                     {/* Top Section */}
                     <div className="flex items-start gap-2">

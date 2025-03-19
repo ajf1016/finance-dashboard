@@ -39,14 +39,15 @@ const CustomTooltip = ({ active, payload }: any) => {
     return null;
 };
 
+// Custom cursor for the graph
 const CustomCursor = ({ x, y, height }: any) => {
     if (!x) return null;
     return (
         <line
             x1={x}
             x2={x}
-            y1={y} // Start from the exact data point
-            y2={y + height} // Ensure it extends to the bottom of the graph
+            y1={y}
+            y2={y + height}
             stroke="#6B7280"
             strokeWidth={1}
             strokeDasharray="5 5"
@@ -71,16 +72,21 @@ export default function PerformanceSummary() {
         initialValue > 0 ? (growth / initialValue) * 100 : 0;
 
     return (
-        <div className="bg-[#1B1A1A] p-6" style={{ borderRadius: "10px" }}>
+        <div className="bg-[#1B1A1A] p-6 rounded-xl">
             {/* Title */}
-            <h2 className="text-lg font-semibold mb-4">Performance Summary</h2>
+            <h2 className="text-lg font-semibold mb-4 text-white">
+                Performance Summary
+            </h2>
 
             {/* Performance Summary Box */}
             <div
-                className="bg-[#262626] p-3 mb-6 px-5"
-                style={{ borderRadius: "6px", width: "max-content" }}
+                className="bg-[#262626] p-3 mb-6 px-5 rounded-md w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl"
+                style={{
+                    borderRadius: "5px",
+                    width: "max-content",
+                }}
             >
-                <div className="text-1xl font-medium">
+                <div className="text-xl font-medium text-white">
                     ₹{Math.round(currentValue).toLocaleString("en-IN")}
                 </div>
                 <div className="flex items-center mt-1">
@@ -110,7 +116,7 @@ export default function PerformanceSummary() {
             </div>
 
             {/* Graph Container */}
-            <div className="h-[300px] relative">
+            <div className="h-[250px] sm:h-[300px] md:h-[350px] relative w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={performanceData}
@@ -151,10 +157,13 @@ export default function PerformanceSummary() {
                             dataKey="formattedDate"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                            interval="preserveStart" // Shows fewer dates (avoids overcrowding)
-                            minTickGap={50} // Spaces labels properly
-                            dy={30}
+                            tick={{
+                                fill: "#9CA3AF",
+                                fontSize: 10,
+                            }}
+                            interval="preserveStart"
+                            minTickGap={30}
+                            dy={10}
                         />
                         <YAxis
                             hide
@@ -167,13 +176,13 @@ export default function PerformanceSummary() {
                             cursor={<CustomCursor />}
                         />
 
-                        {/* Graph Line (No Background Fill) */}
+                        {/* Graph Line */}
                         <Area
                             type="monotone"
                             dataKey="value"
                             stroke="#2563EB"
                             strokeWidth={2}
-                            fill="none" // Removed gradient fill
+                            fill="none"
                             activeDot={{
                                 r: 6,
                                 fill: "#2563EB",
@@ -198,19 +207,19 @@ export default function PerformanceSummary() {
             </div>
 
             {/* Time Period Buttons */}
-            <div className="flex justify-center mt-6 space-x-2">
+            <div className="flex justify-center mt-6 flex-wrap gap-2">
                 {timePeriods.map((period) => (
                     <button
-                        style={{
-                            borderRadius: "5px",
-                        }}
                         key={period.id}
                         className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${
                             selectedTimePeriod === period.id
                                 ? "bg-blue-600 text-white"
-                                : " hover:bg-gray-700"
+                                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                         }`}
                         onClick={() => setSelectedTimePeriod(period.id)}
+                        style={{
+                            borderRadius: "4px",
+                        }}
                     >
                         {period.label}
                     </button>
