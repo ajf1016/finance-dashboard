@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { sankey, sankeyLinkHorizontal } from "d3-sankey";
+import Image from "next/image";
 
 type Node = {
     name: string;
@@ -330,7 +331,14 @@ const OverlapAnalysis: React.FC = () => {
         <div className="bg-neutral-900 text-white p-6 rounded-2xl">
             <div className="flex items-center mb-4">
                 <h2 className="text-xl font-medium">Overlap Analysis</h2>
-                <div className="h-3 w-3 ml-2 bg-yellow-500 rounded-full"></div>
+                {/* <div className="h-3 w-3 ml-2 bg-yellow-500 rounded-full"></div> */}
+                <Image
+                    src={"/assets/icons/warning.svg"}
+                    alt="Change Icon"
+                    width={16}
+                    height={16}
+                    className="ml-1 h-3 h-3"
+                />
             </div>
 
             <div>
