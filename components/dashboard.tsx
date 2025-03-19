@@ -14,9 +14,9 @@ export default function Dashboard() {
     );
 
     return (
-        <div className="flex flex-col min-h-screen bg-black text-white">
+        <div className="flex flex-col min-h-screen bg-[#171616] text-white">
             <Navbar />
-            <div className="flex flex-1">
+            <div className="flex flex-1 min-h-screen">
                 <Sidebar />
                 <main className="flex-1 px-6 py-10">
                     <div className="mb-8">

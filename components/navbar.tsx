@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 export default function Navbar() {
     const pathname = usePathname();
     return (
-        <header className="border-b border-gray-800 bg-black">
+        <header className="bg-[#1B1A1A] mb-[2px]">
             <div className="flex h-20 items-center px-6">
                 <Link
                     href="/"

@@ -42,13 +42,13 @@ export default function InvestmentSummary() {
             {investmentData.map((item, index) => (
                 <div
                     key={index}
-                    className="bg-[#0F172A] rounded-lg p-5 flex flex-col w-[300px] h-[104px] justify-between"
+                    className="bg-[#11283E] rounded-lg p-5 flex flex-col w-[300px] h-[104px] justify-between"
                     style={{ borderRadius: "5px" }}
                 >
                     {/* Top Section */}
                     <div className="flex items-start gap-2">
                         {/* Left Blue Bar - Aligned */}
-                        <div className="h-[30px] w-[3px] bg-blue-500 rounded-md"></div>
+                        <div className="h-[30px] w-[3px] bg-[#B2EFFF] rounded-md"></div>
 
                         <div className="flex-1">
                             <div className="text-xs text-gray-400 font-light">

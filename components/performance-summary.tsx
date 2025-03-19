@@ -39,6 +39,21 @@ const CustomTooltip = ({ active, payload }: any) => {
     return null;
 };
 
+const CustomCursor = ({ x, y, height }: any) => {
+    if (!x) return null;
+    return (
+        <line
+            x1={x}
+            x2={x}
+            y1={y} // Start from the exact data point
+            y2={y + height} // Ensure it extends to the bottom of the graph
+            stroke="#6B7280"
+            strokeWidth={1}
+            strokeDasharray="5 5"
+        />
+    );
+};
+
 export default function PerformanceSummary() {
     const { selectedTimePeriod, performanceData, setSelectedTimePeriod } =
         usePortfolioStore();
@@ -62,10 +77,10 @@ export default function PerformanceSummary() {
 
             {/* Performance Summary Box */}
             <div
-                className="bg-[#262626] p-4 mb-6"
-                style={{ borderRadius: "10px", width: "max-content" }}
+                className="bg-[#262626] p-3 mb-6 px-5"
+                style={{ borderRadius: "6px", width: "max-content" }}
             >
-                <div className="text-2xl font-bold">
+                <div className="text-1xl font-medium">
                     ₹{Math.round(currentValue).toLocaleString("en-IN")}
                 </div>
                 <div className="flex items-center mt-1">
@@ -80,10 +95,10 @@ export default function PerformanceSummary() {
                     ) : (
                         "-"
                     )}
-                    <span className="text-gray-400">
+                    <span className="text-green-500 text-sm">
                         ₹{Math.abs(Math.round(growth)).toLocaleString("en-IN")}
                     </span>
-                    <span className="mx-2 text-gray-500">|</span>
+                    <span className="text-sm mx-2 text-green-500">|</span>
                     <span
                         className={`${
                             growth >= 0 ? "text-green-500" : "text-red-500"
@@ -137,8 +152,9 @@ export default function PerformanceSummary() {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                            interval="preserveStartEnd"
-                            minTickGap={30}
+                            interval="preserveStart" // Shows fewer dates (avoids overcrowding)
+                            minTickGap={50} // Spaces labels properly
+                            dy={30}
                         />
                         <YAxis
                             hide
@@ -148,11 +164,7 @@ export default function PerformanceSummary() {
                         {/* Tooltip */}
                         <Tooltip
                             content={<CustomTooltip />}
-                            cursor={{
-                                stroke: "#6B7280",
-                                strokeWidth: 1,
-                                strokeDasharray: "5 5",
-                            }}
+                            cursor={<CustomCursor />}
                         />
 
                         {/* Graph Line (No Background Fill) */}
