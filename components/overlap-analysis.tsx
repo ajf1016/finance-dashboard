@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { sankey, sankeyLinkHorizontal } from "d3-sankey";
-import styles from "./overlap.module.css";
 
 type Node = {
     name: string;
@@ -17,6 +16,8 @@ type Link = {
     target: number | Node;
     value: number;
     width?: number;
+    sourceIndex?: number;
+    targetIndex?: number;
 };
 
 type SankeyData = {
@@ -80,6 +81,8 @@ const OverlapAnalysis: React.FC = () => {
         nodes: Node[];
         links: Link[];
     } | null>(null);
+    const [activeNode, setActiveNode] = useState<number | null>(null);
+    const [highlightColor, setHighlightColor] = useState<string>("");
 
     // Handle resize
     useEffect(() => {
@@ -98,7 +101,7 @@ const OverlapAnalysis: React.FC = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Create sankey diagram
+    // Create sankey diagram and handle highlighting
     useEffect(() => {
         if (!svgRef.current || dimensions.width === 0) return;
 
@@ -127,17 +130,48 @@ const OverlapAnalysis: React.FC = () => {
             links: data.links.map((d) => Object.assign({}, d)),
         });
 
+        // Process links to add source/target indices for easier filtering
+        sankeyData.links.forEach((link) => {
+            if (
+                typeof link.source === "object" &&
+                link.source.index !== undefined
+            ) {
+                link.sourceIndex = link.source.index;
+            }
+            if (
+                typeof link.target === "object" &&
+                link.target.index !== undefined
+            ) {
+                link.targetIndex = link.target.index;
+            }
+        });
+
         // Draw links
         svg.append("g")
             .selectAll(".link")
             .data(sankeyData.links)
             .join("path")
             .attr("class", "link")
+            .attr("id", (d, i) => `link-${i}`)
             .attr("fill", "none")
             .attr("stroke-opacity", 0.6)
             .attr("d", sankeyLinkHorizontal())
             .attr("stroke", "#2f3031")
-            .attr("stroke-width", (d) => Math.max(1, d.width || 1));
+            .attr("stroke-width", (d) => Math.max(1, d.width || 1))
+            .attr(
+                "data-source",
+                (d) =>
+                    (typeof d.source === "object"
+                        ? d.source.index
+                        : d.source) ?? ""
+            )
+            .attr(
+                "data-target",
+                (d) =>
+                    (typeof d.target === "object"
+                        ? d.target.index
+                        : d.target) ?? ""
+            );
 
         // Draw nodes
         svg.append("g")
@@ -145,6 +179,7 @@ const OverlapAnalysis: React.FC = () => {
             .data(sankeyData.nodes)
             .join("rect")
             .attr("class", "node")
+            .attr("id", (d, i) => `node-${i}`)
             .attr("x", (d) => d.x0 ?? 0)
             .attr("y", (d) => d.y0 ?? 0)
             .attr("height", (d) => (d.y1 ?? 0) - (d.y0 ?? 0))
@@ -157,11 +192,62 @@ const OverlapAnalysis: React.FC = () => {
         setProcessedData(sankeyData);
     }, [dimensions]);
 
+    // Update highlighting based on active node
+    useEffect(() => {
+        if (!svgRef.current || !processedData) return;
+
+        const svg = d3.select(svgRef.current);
+
+        // Reset all links to default state
+        svg.selectAll(".link")
+            .transition()
+            .duration(300)
+            .attr("stroke", "#2f3031")
+            .attr("stroke-opacity", 0.6);
+
+        // Apply highlighting if there's an active node
+        if (activeNode !== null) {
+            // Find all links connected to the active node
+            const relevantLinks = processedData.links.filter((link) => {
+                const sourceIdx =
+                    typeof link.source === "object"
+                        ? link.source.index
+                        : link.source;
+                const targetIdx =
+                    typeof link.target === "object"
+                        ? link.target.index
+                        : link.target;
+                return sourceIdx === activeNode || targetIdx === activeNode;
+            });
+
+            // Highlight the relevant links
+            relevantLinks.forEach((link, i) => {
+                const sourceIdx =
+                    typeof link.source === "object"
+                        ? link.source.index
+                        : link.source;
+                const targetIdx =
+                    typeof link.target === "object"
+                        ? link.target.index
+                        : link.target;
+
+                svg.selectAll(
+                    `.link[data-source="${sourceIdx}"][data-target="${targetIdx}"]`
+                )
+                    .transition()
+                    .duration(300)
+                    .attr("stroke", highlightColor)
+                    .attr("stroke-opacity", 0.9);
+            });
+        }
+    }, [activeNode, processedData, highlightColor]);
+
     // Calculate positions for fund labels
     const getFundLabelStyle = (node: Node, index: number) => {
         if (!node.x0 || !node.y0) return {};
 
         const centerY = node.y0 + ((node.y1 ?? node.y0) - node.y0) / 2;
+        const color = d3.schemeCategory10[index % 10];
 
         return {
             position: "absolute",
@@ -169,7 +255,7 @@ const OverlapAnalysis: React.FC = () => {
             left: `${Math.max(10, node.x0 - 175)}px`, // Ensure minimum of 10px from left edge
             width: "150px",
             height: "60px",
-            backgroundColor: d3.schemeCategory10[index % 10],
+            backgroundColor: color,
             color: "white",
             padding: "6px",
             borderRadius: "8px",
@@ -182,20 +268,26 @@ const OverlapAnalysis: React.FC = () => {
             zIndex: 10,
             transform: "translateX(0)",
             transition: "all 0.3s ease",
+            cursor: "pointer",
+            boxShadow: activeNode === index ? "0 0 0 3px white" : "none",
         };
     };
 
     // Calculate positions for stock labels
-    const getStockLabelStyle = (node: Node) => {
+    const getStockLabelStyle = (node: Node, index: number) => {
         if (!node.x1 || !node.y0) return {};
 
         const centerY = node.y0 + ((node.y1 ?? node.y0) - node.y0) / 2;
+        const actualIndex = index + 5; // Offset for stock nodes
+        const color = d3.schemeCategory10[actualIndex % 10];
 
         return {
             position: "absolute",
             top: `${centerY - 10}px`,
             left: `${node.x1 + 10}px`,
-            width: "100px",
+            padding: "4px 8px",
+            borderRadius: "4px",
+            // backgroundColor: "rgba(0,0,0,0.5)",
             color: "white",
             textAlign: "left",
             fontSize: "12px",
@@ -203,7 +295,22 @@ const OverlapAnalysis: React.FC = () => {
             zIndex: 10,
             transform: "translateX(0)",
             transition: "all 0.3s ease",
+            cursor: "pointer",
+            border: activeNode === actualIndex ? `2px solid ${color}` : "none",
         };
+    };
+
+    // Handler for clicking labels
+    const handleLabelClick = (index: number, color: string) => {
+        if (activeNode === index) {
+            // If clicking the same node again, deactivate it
+            setActiveNode(null);
+            setHighlightColor("");
+        } else {
+            // Activate the clicked node
+            setActiveNode(index);
+            setHighlightColor(color);
+        }
     };
 
     // Simplified fund names for labels
@@ -269,7 +376,15 @@ const OverlapAnalysis: React.FC = () => {
                                                         index
                                                     ) as React.CSSProperties
                                                 }
-                                                className="shadow-md overflow-hidden"
+                                                className="shadow-md overflow-hidden pointer-events-auto"
+                                                onClick={() =>
+                                                    handleLabelClick(
+                                                        index,
+                                                        d3.schemeCategory10[
+                                                            index % 10
+                                                        ]
+                                                    )
+                                                }
                                             >
                                                 {simplifyFundName(node.name)}
                                             </div>
@@ -285,8 +400,18 @@ const OverlapAnalysis: React.FC = () => {
                                                 key={`stock-${index}`}
                                                 style={
                                                     getStockLabelStyle(
-                                                        node
+                                                        node,
+                                                        index
                                                     ) as React.CSSProperties
+                                                }
+                                                className="pointer-events-auto"
+                                                onClick={() =>
+                                                    handleLabelClick(
+                                                        index + 5,
+                                                        d3.schemeCategory10[
+                                                            (index + 5) % 10
+                                                        ]
+                                                    )
                                                 }
                                             >
                                                 {node.name}
@@ -297,6 +422,19 @@ const OverlapAnalysis: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Reset button */}
+                {/* {activeNode !== null && (
+                    <button
+                        className="mt-4 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+                        onClick={() => {
+                            setActiveNode(null);
+                            setHighlightColor("");
+                        }}
+                    >
+                        Reset Highlighting
+                    </button>
+                )} */}
             </div>
         </div>
     );
