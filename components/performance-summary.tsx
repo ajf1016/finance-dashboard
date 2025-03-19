@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Area,
     AreaChart,
@@ -9,67 +9,63 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import { usePortfolioStore } from "@/lib/store";
-import type { TimePeriod } from "@/lib/store";
 import Image from "next/image";
 
-// Time period buttons
-const timePeriods: { id: TimePeriod; label: string }[] = [
-    { id: "1M", label: "1M" },
-    { id: "3M", label: "3M" },
-    { id: "6M", label: "6M" },
-    { id: "1Y", label: "1Y" },
-    { id: "3Y", label: "3Y" },
-    { id: "MAX", label: "MAX" },
-];
+// API Endpoint
+const API_URL = "http://127.0.0.1:8000/api/portfolio/stock-allocation";
 
-// Custom tooltip component
-const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-        const data = payload[0].payload;
-        return (
-            <div className="bg-gray-800 p-2 rounded shadow-lg border border-gray-700">
-                <p className="text-sm font-medium">{data.formattedDate}</p>
-                <p className="text-sm text-blue-400">
-                    ₹{Math.round(data.value).toLocaleString("en-IN")}
-                </p>
-            </div>
-        );
-    }
-    return null;
+// Bearer Token for Authentication (Replace with actual token)
+const HEADERS = {
+    Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_ACCESS_TOKEN}`,
+    "Content-Type": "application/json",
 };
 
-// Custom cursor for the graph
-const CustomCursor = ({ x, y, height }: any) => {
-    if (!x) return null;
-    return (
-        <line
-            x1={x}
-            x2={x}
-            y1={y}
-            y2={y + height}
-            stroke="#6B7280"
-            strokeWidth={1}
-            strokeDasharray="5 5"
-        />
-    );
-};
+// Available Time Periods
+const timePeriods = ["1M", "3M", "6M", "1Y", "3Y", "MAX"];
 
 export default function PerformanceSummary() {
-    const { selectedTimePeriod, performanceData, setSelectedTimePeriod } =
-        usePortfolioStore();
-    const [hoveredPoint, setHoveredPoint] = useState<any>(null);
+    const [selectedTimePeriod, setSelectedTimePeriod] = useState("1M");
+    const [graphData, setGraphData] = useState([]);
+    const [summary, setSummary] = useState({
+        total_value: 0,
+        change_amount: 0,
+        change_percentage: 0,
+    });
 
-    // Calculate values
-    const currentValue =
-        performanceData.length > 0
-            ? performanceData[performanceData.length - 1].value
-            : 0;
-    const initialValue =
-        performanceData.length > 0 ? performanceData[0].value : 0;
-    const growth = currentValue - initialValue;
-    const growthPercentage =
-        initialValue > 0 ? (growth / initialValue) * 100 : 0;
+    // Fetch Data from API
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch(
+                    `${API_URL}?period=${selectedTimePeriod}`,
+                    { headers: HEADERS }
+                );
+                if (!response.ok) throw new Error("Failed to fetch data");
+
+                const data = await response.json();
+
+                // Format data for the graph
+                const formattedData = data.history.map((point: any) => ({
+                    date: new Date(point.date).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                    }),
+                    value: point.value,
+                }));
+
+                setGraphData(formattedData);
+                setSummary({
+                    total_value: data.total_value,
+                    change_amount: data.change_amount,
+                    change_percentage: data.change_percentage,
+                });
+            } catch (error) {
+                console.error("Error fetching graph data:", error);
+            }
+        };
+
+        fetchData();
+    }, [selectedTimePeriod]);
 
     return (
         <div className="bg-[#1B1A1A] p-6 rounded-xl">
@@ -80,54 +76,65 @@ export default function PerformanceSummary() {
 
             {/* Performance Summary Box */}
             <div
-                className="bg-[#262626] p-3 mb-6 px-5 rounded-md w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl"
-                style={{
-                    borderRadius: "5px",
-                    width: "max-content",
-                }}
+                className="bg-[#262626] p-3 mb-6 px-5 rounded-md  max-w-xs"
+                style={{ borderRadius: "5px", width: "max-content" }}
             >
                 <div className="text-xl font-medium text-white">
-                    ₹{Math.round(currentValue).toLocaleString("en-IN")}
+                    ₹{summary.total_value.toLocaleString("en-IN")}
                 </div>
                 <div className="flex items-center mt-1">
-                    {growth >= 0 ? (
-                        <Image
-                            src={"/assets/icons/plus.svg"}
-                            alt="Change Icon"
-                            width={16}
-                            height={16}
-                            className="mr-1"
-                        />
-                    ) : (
-                        "-"
-                    )}
-                    <span className="text-green-500 text-sm">
-                        ₹{Math.abs(Math.round(growth)).toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-sm mx-2 text-green-500">|</span>
+                    <Image
+                        src={
+                            summary.change_amount >= 0
+                                ? "/assets/icons/plus.svg"
+                                : "/assets/icons/down.svg"
+                        }
+                        alt="Change Icon"
+                        width={16}
+                        height={16}
+                        className="mr-1"
+                    />
                     <span
-                        className={`${
-                            growth >= 0 ? "text-green-500" : "text-red-500"
+                        className={`text-sm ${
+                            summary.change_amount >= 0
+                                ? "text-green-500"
+                                : "text-red-500"
                         }`}
                     >
-                        {Math.abs(growthPercentage).toFixed(1)}%
+                        ₹
+                        {Math.abs(summary.change_amount).toLocaleString(
+                            "en-IN"
+                        )}
+                    </span>
+                    <span
+                        className={`text-sm mx-2 ${
+                            summary.change_percentage >= 0
+                                ? "text-green-500"
+                                : "text-red-500"
+                        }`}
+                    >
+                        |
+                    </span>
+                    <span
+                        className={`text-sm ${
+                            summary.change_percentage >= 0
+                                ? "text-green-500"
+                                : "text-red-500"
+                        }`}
+                    >
+                        {Math.abs(summary.change_percentage).toFixed(1)}%
                     </span>
                 </div>
             </div>
 
             {/* Graph Container */}
-            <div className="h-[250px] sm:h-[300px] md:h-[350px] relative w-full">
+            <div className="h-[300px] relative w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
-                        data={performanceData}
+                        data={graphData}
                         margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-                        onMouseMove={(data) => {
-                            if (data.activePayload) {
-                                setHoveredPoint(data.activePayload[0].payload);
-                            }
-                        }}
                     >
-                        {/* Dashed Grid Lines */}
+                        {/* Grid Lines */}
                         <defs>
                             <pattern
                                 id="gridLines"
@@ -142,7 +149,7 @@ export default function PerformanceSummary() {
                                     y2="40"
                                     stroke="#374151"
                                     strokeWidth="1"
-                                    strokeDasharray="4 4"
+                                    strokeDasharray="5 5"
                                 />
                             </pattern>
                         </defs>
@@ -154,26 +161,37 @@ export default function PerformanceSummary() {
 
                         {/* Axes */}
                         <XAxis
-                            dataKey="formattedDate"
+                            dataKey="date"
                             axisLine={false}
                             tickLine={false}
-                            tick={{
-                                fill: "#9CA3AF",
-                                fontSize: 10,
-                            }}
-                            interval="preserveStart"
-                            minTickGap={30}
+                            tick={{ fill: "#9CA3AF", fontSize: 12 }}
+                            minTickGap={50}
                             dy={10}
                         />
-                        <YAxis
-                            hide
-                            domain={["dataMin - 100000", "dataMax + 100000"]}
-                        />
+                        <YAxis hide />
 
                         {/* Tooltip */}
                         <Tooltip
-                            content={<CustomTooltip />}
-                            cursor={<CustomCursor />}
+                            content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                        <div className="bg-gray-800 p-2 rounded shadow-lg border border-gray-700">
+                                            <p className="text-sm font-medium">
+                                                {data.date}
+                                            </p>
+                                            <p className="text-sm text-blue-400">
+                                                ₹
+                                                {Math.round(
+                                                    data.value
+                                                ).toLocaleString("en-IN")}
+                                            </p>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
+                            cursor={{ stroke: "#6B7280", strokeWidth: 1 }}
                         />
 
                         {/* Graph Line */}
@@ -192,36 +210,24 @@ export default function PerformanceSummary() {
                         />
                     </AreaChart>
                 </ResponsiveContainer>
-
-                {/* Hovered Point Indicator */}
-                {hoveredPoint && (
-                    <div
-                        className="absolute pointer-events-none"
-                        style={{
-                            left: "50%",
-                            top: "50%",
-                            transform: "translate(-50%, -50%)",
-                        }}
-                    ></div>
-                )}
             </div>
 
             {/* Time Period Buttons */}
             <div className="flex justify-center mt-6 flex-wrap gap-2">
                 {timePeriods.map((period) => (
                     <button
-                        key={period.id}
+                        key={period}
                         className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${
-                            selectedTimePeriod === period.id
+                            selectedTimePeriod === period
                                 ? "bg-blue-600 text-white"
                                 : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                         }`}
-                        onClick={() => setSelectedTimePeriod(period.id)}
+                        onClick={() => setSelectedTimePeriod(period)}
                         style={{
                             borderRadius: "4px",
                         }}
                     >
-                        {period.label}
+                        {period}
                     </button>
                 ))}
             </div>
