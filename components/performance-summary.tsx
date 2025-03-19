@@ -24,7 +24,7 @@ const HEADERS = {
 const timePeriods = ["1M", "3M", "6M", "1Y", "3Y", "MAX"];
 
 export default function PerformanceSummary() {
-    const [selectedTimePeriod, setSelectedTimePeriod] = useState("1M");
+    const [selectedTimePeriod, setSelectedTimePeriod] = useState("3Y");
     const [graphData, setGraphData] = useState([]);
     const [summary, setSummary] = useState({
         total_value: 0,
@@ -198,12 +198,12 @@ export default function PerformanceSummary() {
                         <Area
                             type="monotone"
                             dataKey="value"
-                            stroke="#2563EB"
+                            stroke="#0070DF"
                             strokeWidth={2}
                             fill="none"
                             activeDot={{
                                 r: 6,
-                                fill: "#2563EB",
+                                fill: "#0070DF",
                                 stroke: "#fff",
                                 strokeWidth: 2,
                             }}
@@ -219,7 +219,7 @@ export default function PerformanceSummary() {
                         key={period}
                         className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${
                             selectedTimePeriod === period
-                                ? "bg-blue-600 text-white"
+                                ? "bg-[#0070DF] text-white"
                                 : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                         }`}
                         onClick={() => setSelectedTimePeriod(period)}

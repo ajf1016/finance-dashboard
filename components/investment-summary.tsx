@@ -140,8 +140,8 @@ export default function InvestmentSummary() {
                             <div
                                 className={`flex items-center font-medium ${
                                     item.changeType === "up"
-                                        ? "text-green-500"
-                                        : "text-red-500"
+                                        ? "text-[#6BBD6E]"
+                                        : "text-[#EC817D]"
                                 }`}
                             >
                                 <Image
