@@ -18,7 +18,7 @@ export default function Dashboard() {
             <Navbar />
             <div className="flex flex-1 min-h-screen">
                 <Sidebar />
-                <main className="flex-1 px-6 py-10">
+                <main className="flex-1 px-6 py-10 sm:px-2 sm:py-4">
                     <div className="mb-8">
                         <h1 className="text-2xl font-medium">
                             Good morning, Yashna!
@@ -38,11 +38,11 @@ export default function Dashboard() {
                             }
                         />
 
-                        {activeTab === "performance" ? (
+                        {/* {activeTab === "performance" ? (
                             <PerformanceMetrics />
                         ) : (
                             <PortfolioComposition />
-                        )}
+                        )} */}
                     </div>
                 </main>
             </div>

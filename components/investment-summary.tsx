@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-// Sample data structure (Replace with API data)
+// Sample investment data
 const investmentData = [
     {
         title: "Current",
@@ -38,23 +38,22 @@ const investmentData = [
 
 export default function InvestmentSummary() {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[1px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-2">
             {investmentData.map((item, index) => (
                 <div
                     key={index}
-                    className="bg-[#11283E] rounded-lg p-5 flex flex-col w-[300px] h-[104px] justify-between"
-                    style={{ borderRadius: "5px" }}
+                    className="bg-[#11283E] rounded-xl p-5 flex flex-col h-auto sm:h-[120px] justify-between transition-all sm:p-2"
                 >
                     {/* Top Section */}
                     <div className="flex items-start gap-2">
-                        {/* Left Blue Bar - Aligned */}
+                        {/* Left Blue Bar */}
                         <div className="h-[30px] w-[3px] bg-[#B2EFFF] rounded-md"></div>
 
                         <div className="flex-1">
-                            <div className="text-xs text-gray-400 font-light">
+                            <div className="text-xs sm:text-sm text-gray-400 font-light">
                                 {item.title}
                             </div>
-                            <div className="text-sm font-light text-white leading-tight">
+                            <div className="text-sm sm:text-base font-light text-white leading-tight">
                                 {item.label}
                             </div>
                         </div>
@@ -79,16 +78,18 @@ export default function InvestmentSummary() {
                                     height={16}
                                     className="mr-1"
                                 />
-                                <span>{item.change}</span>
+                                <span className="text-xs sm:text-sm">
+                                    {item.change}
+                                </span>
                             </div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs sm:text-sm text-gray-400">
                                 {item.subLabel}
                             </div>
                         </div>
                     </div>
 
-                    {/* Amount Section - Full Width */}
-                    <div className="ml-3 text-sm font-medium text-white w-full">
+                    {/* Amount Section */}
+                    <div className="ml-3 text-sm sm:text-base font-medium text-white w-full">
                         {item.amount}
                     </div>
                 </div>

@@ -10,7 +10,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     return (
-        <header className="bg-[#1B1A1A] mb-[2px]">
+        <header className="bg-[#1B1A1A] mb-[2px] w-full">
             <div className="flex h-20 items-center px-6">
                 {/* Logo */}
                 <Link href="/" className="hidden md:flex flex items-center">
