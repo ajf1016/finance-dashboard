@@ -202,7 +202,7 @@ export default function SectorAllocation() {
                                 }}
                             >
                                 <div
-                                    className="grid grid-cols-4 gap-[4px] h-full w-full"
+                                    className="flex flex-wrap gap-1 sm:grid sm:grid-cols-2 lg:grid-cols-4 w-full"
                                     style={{
                                         padding: 0,
                                     }}
